@@ -113,6 +113,39 @@ public class Model extends Observable {
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
+        board.setViewingPerspective(side);
+
+        boolean[][] merged = new boolean[board.size()][board.size()];
+        for (int r = 2; r >= 0; r--) {
+            for (int c = 0; c <= 3; c++) {
+                Tile t = board.tile(c, r);
+
+                if (t != null) {
+                    int dc = c, dr = r + 1;
+                    while (dr <= 3) {
+                        Tile dt = board.tile(dc, dr);
+                        if (dt != null) {
+                            if (merged[dc][dr] == true || dt.value() != t.value()) {
+                                dr--;
+                            }
+                            break;
+                        }
+                        if (dr == 3) {
+                            break;
+                        }
+                        dr++;
+                    }
+                    if (dr != r) {
+                        changed = true;
+                    }
+                    if (board.move(dc, dr, t)){
+                        merged[dc][dr] = true;
+                        score += board.tile(dc,dr).value();
+                    }
+                }
+            }
+        }
+        board.setViewingPerspective(Side.NORTH);
 
         checkGameOver();
         if (changed) {
@@ -138,6 +171,11 @@ public class Model extends Observable {
      * */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
+        for (Tile t : b) {
+            if (t == null) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -148,6 +186,11 @@ public class Model extends Observable {
      */
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        for (Tile t : b) {
+            if (t != null && t.value() == MAX_PIECE) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -159,6 +202,24 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        return emptySpaceExists(b) || mergeMoveExists(b);
+    }
+
+    private static boolean mergeMoveExists(Board b) {
+        int[][] neighbors = {{-1,0},{1,0},{0,-1},{0,1}};
+        int len = b.size();
+        for (Tile t : b) {
+            int c = t.col();
+            int r = t.row();
+            for (int i = 0; i < 4; i++) {
+                int nc = c + neighbors[i][0];
+                int nr = r + neighbors[i][1];
+                if ((0 <= nc && nc < len) && (0 <= nr && nr < len)
+                        && (b.tile(nc, nr).value() == t.value())) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
